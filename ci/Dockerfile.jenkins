@@ -2,7 +2,22 @@ FROM jenkins/jenkins:lts
 
 USER root
 
+# Install Docker CLI, Git, Java 11, curl, unzip, and ping
 RUN apt-get update && \
-    apt-get install -y docker.io git iputils-ping curl
+    apt-get install -y \
+        docker.io \
+        git \
+        openjdk-11-jdk \
+        curl \
+        unzip \
+        iputils-ping && \
+    rm -rf /var/lib/apt/lists/*
 
-# Jenkins correrá como root para evitar problemas de permisos con el socket Docker
+# Install SonarScanner CLI
+ENV SONAR_SCANNER_VERSION=5.0.1.3006
+
+RUN curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${SONAR_SCANNER_VERSION}-linux.zip && \
+    unzip sonar-scanner.zip -d /opt && \
+    rm sonar-scanner.zip && \
+    ln -s /opt/sonar-scanner-${SONAR_SCANNER_VERSION}-linux/bin/sonar-scanner /usr/local/bin/sonar-scanner && \
+    chmod +x /usr/local/bin/sonar-scanner

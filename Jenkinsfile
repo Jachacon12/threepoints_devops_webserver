@@ -19,7 +19,7 @@ pipeline {
         stage('Análisis SonarQube') {
             steps {
                 withSonarQubeEnv('Sonar local') {
-                    sh 'sonar-scanner'
+                    sh '/opt/sonar-scanner/bin/sonar-scanner'
                 }
             }
         }
