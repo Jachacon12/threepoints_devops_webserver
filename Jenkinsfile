@@ -5,6 +5,10 @@ pipeline {
         git 'Default'
     }
 
+    environment {
+        SONAR_SCANNER_OPTS = "-Dsonar.projectKey=threepoints_devops_webserver"
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -12,15 +16,32 @@ pipeline {
             }
         }
 
-        stage('Pruebas de SAST') {
+        stage('Análisis SonarQube') {
             steps {
-                echo 'Ejecución de pruebas de SAST'
+                withSonarQubeEnv('SonarQube') {
+                    sh 'sonar-scanner'
+                }
             }
         }
 
-        stage('Build') {
+        stage("Esperar calidad") {
+            steps {
+                timeout(time: 1, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
             steps {
                 sh 'docker build -t devops_ws .'
+            }
+        }
+
+        stage('Deploy Docker Container') {
+            steps {
+                sh 'docker stop devops_ws || true'
+                sh 'docker run -d -p 8090:8090 --name devops devops_ws'
             }
         }
     }
