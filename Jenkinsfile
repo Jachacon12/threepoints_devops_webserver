@@ -18,7 +18,7 @@ pipeline {
 
         stage('Análisis SonarQube') {
             steps {
-                withSonarQubeEnv('Sonar Local') {
+                withSonarQubeEnv('threepoints_devops_webserver') {
                     sh 'sonar-scanner'
                 }
             }
