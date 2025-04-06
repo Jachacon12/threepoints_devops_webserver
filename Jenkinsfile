@@ -8,6 +8,7 @@ pipeline {
 
     environment {
         SONAR_SCANNER_OPTS = "-Dsonar.projectKey=Sonar local"
+        SONAR_AUTH_TOKEN = credentials('sonar-key')
     }
 
     stages {
@@ -17,13 +18,22 @@ pipeline {
             }
         }
 
-        stage('Análisis SonarQube') {
-            steps {
-                withSonarQubeEnv('Sonar local') {
-                    sh 'sonar-scanner'
-                }
-            }
+          stage('Análisis SonarQube') {
+      steps {
+        withSonarQubeEnv('Sonar local') {
+          sh '''
+            docker run --rm \
+              -v $PWD:/usr/src \
+              -w /usr/src \
+              sonarsource/sonar-scanner-cli:5.0 \
+              -Dsonar.projectKey=devops-sonar \
+              -Dsonar.sources=src \
+              -Dsonar.host.url=$SONAR_HOST_URL \
+              -Dsonar.login=$SONAR_AUTH_TOKEN
+          '''
         }
+      }
+    }
 
         stage("Esperar calidad") {
             steps {
