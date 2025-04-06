@@ -6,7 +6,7 @@ pipeline {
     }
 
     environment {
-        SONAR_SCANNER_OPTS = "-Dsonar.projectKey=threepoints_devops_webserver"
+        SONAR_SCANNER_OPTS = "-Dsonar.projectKey=Sonar local"
     }
 
     stages {
