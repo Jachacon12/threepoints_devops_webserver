@@ -17,18 +17,23 @@ pipeline {
             }
         }
 
-          stage('Análisis SonarQube') {
-      steps {
-        withSonarQubeEnv('Sonar local') {
-          sh '''
-            docker run --rm \
-             -v $PWD:/usr/src \
-             -w /usr/src \
-            sonarsource/sonar-scanner-cli:5.0
-            '''
-        }
-      }
+stage('Análisis SonarQube') {
+  steps {
+    withSonarQubeEnv('Sonar local') {
+      sh '''
+        docker run --rm \
+          -v $PWD:/usr/src \
+          -w /usr/src \
+          -e SONAR_HOST_URL=http://host.docker.internal:9000 \
+          sonarsource/sonar-scanner-cli:5.0 \
+          -Dsonar.projectKey=devops-sonar \
+          -Dsonar.sources=src \
+          -Dsonar.login=$SONAR_AUTH_TOKEN
+      '''
     }
+  }
+}
+
 
         stage("Esperar calidad") {
             steps {
