@@ -1,0 +1,8 @@
+FROM jenkins/jenkins:lts
+
+USER root
+
+RUN apt-get update && \
+    apt-get install -y docker.io git iputils-ping curl
+
+# Jenkins correrá como root para evitar problemas de permisos con el socket Docker
