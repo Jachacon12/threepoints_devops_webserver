@@ -16,3 +16,13 @@ Esto abrirá en el puerto 8090 (Se puede cambiar con el parámetro `PORT` en el 
 ## Parametrize
 
 - `PORT` Para determinar en qué puerto se ejecuta el servidor. Default=8090
+
+## Estructura del Proyecto
+
+Este repositorio sigue una estructura profesional DevOps, separando claramente:
+
+- el código de la aplicación (`src/`)
+- la configuración de Jenkins (`ci/`)
+- y los archivos de automatización como el `Jenkinsfile`.
+
+La imagen personalizada de Jenkins incluye Docker y Git, y se ejecuta usando `docker-compose` desde la carpeta `ci/`.
