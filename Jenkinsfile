@@ -3,7 +3,6 @@ pipeline {
 
     tools {
         git 'Default'
-        sonarQubeScanner 'SonarScanner'
     }
 
     environment {
