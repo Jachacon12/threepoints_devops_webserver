@@ -3,6 +3,7 @@ pipeline {
 
     tools {
         git 'Default'
+        sonarQubeScanner 'SonarScanner'
     }
 
     environment {
@@ -19,7 +20,7 @@ pipeline {
         stage('Análisis SonarQube') {
             steps {
                 withSonarQubeEnv('Sonar local') {
-                    sh '/opt/sonar-scanner/bin/sonar-scanner'
+                    sh 'sonar-scanner'
                 }
             }
         }

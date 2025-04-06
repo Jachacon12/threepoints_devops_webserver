@@ -2,22 +2,25 @@ FROM jenkins/jenkins:lts
 
 USER root
 
-# Install Docker CLI, Git, Java 11, curl, unzip, and ping
-RUN apt-get update && \
-    apt-get install -y \
-        docker.io \
-        git \
-        openjdk-11-jdk \
-        curl \
-        unzip \
-        iputils-ping && \
-    rm -rf /var/lib/apt/lists/*
+# Install base tools and OpenJDK 17 (instead of 11)
+RUN apt-get update && apt-get install -y \
+  docker.io \
+  git \
+  openjdk-17-jdk \
+  curl \
+  unzip \
+  iputils-ping \
+  && rm -rf /var/lib/apt/lists/*
 
 # Install SonarScanner CLI
 ENV SONAR_SCANNER_VERSION=5.0.1.3006
+ENV SONAR_SCANNER_HOME=/opt/sonar-scanner
 
 RUN curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${SONAR_SCANNER_VERSION}-linux.zip && \
-    unzip sonar-scanner.zip -d /opt && \
+    unzip sonar-scanner.zip && \
+    mv sonar-scanner-${SONAR_SCANNER_VERSION}-linux $SONAR_SCANNER_HOME && \
     rm sonar-scanner.zip && \
-    ln -s /opt/sonar-scanner-${SONAR_SCANNER_VERSION}-linux/bin/sonar-scanner /usr/local/bin/sonar-scanner && \
-    chmod +x /usr/local/bin/sonar-scanner
+    chmod -R +x $SONAR_SCANNER_HOME/bin && \
+    ln -s $SONAR_SCANNER_HOME/bin/sonar-scanner /usr/local/bin/sonar-scanner
+
+ENV PATH="${SONAR_SCANNER_HOME}/bin:$PATH"
