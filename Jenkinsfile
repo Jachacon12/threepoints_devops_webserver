@@ -5,28 +5,30 @@ pipeline {
         git 'Default'
     }
 
-    environment {
-        SONAR_SCANNER_OPTS = "-Dsonar.projectKey=devops-sonar"
-        SONAR_TOKEN = credentials('new-sonar-key')
-    }
-
-    stages {
-        stage('Checkout') {
-            steps {
-                git 'https://github.com/Jachacon12/threepoints_devops_webserver.git'
-            }
-        }
-
-stage('Análisis SonarQube') {
-  steps {
-    withSonarQubeEnv('Sonar local') {
-      sh 'sonar-scanner -Dsonar.projectKey=devops-sonar -Dsonar.sources=.'
-    }
-    timeout(time: 1, unit: 'MINUTES') {
-      waitForQualityGate()
-    }
+   environment {
+    SONARQUBE_SERVER = 'Sonar local' 
+    SONAR_SCANNER = 'SonarScanner'   
   }
-}
+
+  stages {
+    stage('Checkout') {
+      steps {
+        git branch: 'jenkins-pipeline',
+            credentialsId: 'ssh_key',
+            url: 'git@github.com:Jachacon12/threepoints_devops_webserver.git'
+      }
+    }
+
+    stage('SonarQube Analysis') {
+      steps {
+        withSonarQubeEnv("${env.SONARQUBE_SERVER}") {
+          script {
+            def scannerHome = tool "${env.SONAR_SCANNER}"
+            sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=devops-sonar -Dsonar.sources=."
+          }
+        }
+      }
+    }
 
 
         stage("Esperar calidad") {
