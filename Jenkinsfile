@@ -1,57 +1,43 @@
 pipeline {
-  agent any
+    agent any
 
-  environment {
-    SONAR_TOKEN = credentials('sonar-key-new')
-  }
+    environment {
+        SONAR_TOKEN = credentials('sonar-token')
+    }
 
-  stages {
-    stage('Tool Setup') {
-      steps {
-        script {
-          env.JAVA_HOME = tool name: 'jdk-17', type: 'hudson.model.JDK'
-          env.PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
+    stages {
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/Jachacon12/threepoints_devops_webserver.git'
+            }
         }
-      }
-    }
 
-    stage('Checkout') {
-      steps {
-        git 'https://github.com/Jachacon12/threepoints_devops_webserver.git'
-      }
-    }
-
-  stage('SonarQube Analysis') {
-  steps {
-    withSonarQubeEnv('Sonar local') {
-      sh "sonar-scanner -Dsonar.projectKey=devops-sonar -Dsonar.sources=. -Dsonar.token=${SONAR_TOKEN}"
-    }
-  }
-}
-
-
-    stage('Esperar calidad') {
-      steps {
-        timeout(time: 3, unit: 'MINUTES') {
-          waitForQualityGate abortPipeline: true
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('Sonar local') {
+                    sh "/opt/sonar-scanner/bin/sonar-scanner -Dsonar.projectKey=devops-sonar -Dsonar.sources=. -Dsonar.token=${SONAR_TOKEN}"
+                }
+            }
         }
-      }
-    }
 
-    stage('Build Docker Image') {
-      steps {
-        sh 'docker build -t devops-webserver .'
-      }
-    }
+        stage('Wait for Quality Gate') {
+            steps {
+                timeout(time: 1, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
 
-    stage('Deploy Docker Container') {
-      steps {
-        sh '''
-          docker stop devops-webserver || true
-          docker rm devops-webserver || true
-          docker run -d --name devops-webserver -p 3000:3000 devops-webserver
-        '''
-      }
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build -t myapp:latest .'
+            }
+        }
+
+        stage('Deploy Docker Container') {
+            steps {
+                sh 'docker run -d --rm -p 3000:3000 --name myapp myapp:latest'
+            }
+        }
     }
-  }
 }
