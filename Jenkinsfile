@@ -7,17 +7,15 @@ pipeline {
 
    environment {
     SONARQUBE_SERVER = 'Sonar local' 
-    SONAR_SCANNER = 'SonarScanner'   
+    SONAR_SCANNER = 'SonarScanner' 
   }
 
-  stages {
-    stage('Checkout') {
-      steps {
-        git branch: 'jenkins-pipeline',
-            credentialsId: 'ssh_key',
-            url: 'git@github.com:Jachacon12/threepoints_devops_webserver.git'
-      }
-    }
+    stages {
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/Jachacon12/threepoints_devops_webserver.git'
+            }
+        }
 
     stage('SonarQube Analysis') {
       steps {
