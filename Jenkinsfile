@@ -21,21 +21,14 @@ pipeline {
       }
     }
 
-    stage('Análisis SonarQube') {
-      steps {
-        withSonarQubeEnv('Sonar local') {
-          script {
-            def scannerHome = tool name: 'SonarScanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
-            sh """
-              ${scannerHome}/bin/sonar-scanner \
-                -Dsonar.projectKey=devops-sonar \
-                -Dsonar.sources=. \
-                -Dsonar.token=$SONAR_TOKEN
-            """
-          }
-        }
-      }
+  stage('SonarQube Analysis') {
+  steps {
+    withSonarQubeEnv('Sonar local') {
+      sh "sonar-scanner -Dsonar.projectKey=devops-sonar -Dsonar.sources=. -Dsonar.token=${SONAR_TOKEN}"
     }
+  }
+}
+
 
     stage('Esperar calidad') {
       steps {
