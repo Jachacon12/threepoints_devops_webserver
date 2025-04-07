@@ -1,53 +1,64 @@
 pipeline {
-    agent any
+  agent any
 
-    tools {
-        git 'Default'
-    }
-
-   environment {
-    SONARQUBE_SERVER = 'Sonar local' 
-    SONAR_SCANNER = 'SonarScanner' 
+  environment {
+    SONAR_TOKEN = credentials('sonar-token')
   }
 
-    stages {
-        stage('Checkout') {
-            steps {
-                git 'https://github.com/Jachacon12/threepoints_devops_webserver.git'
-            }
-        }
-
-    stage('SonarQube Analysis') {
+  stages {
+    stage('Tool Setup') {
       steps {
-        withSonarQubeEnv("${env.SONARQUBE_SERVER}") {
+        script {
+          env.JAVA_HOME = tool name: 'jdk-17', type: 'hudson.model.JDK'
+          env.PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
+        }
+      }
+    }
+
+    stage('Checkout') {
+      steps {
+        git 'https://github.com/Jachacon12/threepoints_devops_webserver.git'
+      }
+    }
+
+    stage('Análisis SonarQube') {
+      steps {
+        withSonarQubeEnv('Sonar local') {
           script {
-            def scannerHome = tool "${env.SONAR_SCANNER}"
-            sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=devops-sonar -Dsonar.sources=."
+            def scannerHome = tool name: 'SonarScanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+            sh """
+              ${scannerHome}/bin/sonar-scanner \
+                -Dsonar.projectKey=devops-sonar \
+                -Dsonar.sources=. \
+                -Dsonar.token=$SONAR_TOKEN
+            """
           }
         }
       }
     }
 
-
-        stage("Esperar calidad") {
-            steps {
-                timeout(time: 1, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
-                }
-            }
+    stage('Esperar calidad') {
+      steps {
+        timeout(time: 1, unit: 'MINUTES') {
+          waitForQualityGate abortPipeline: true
         }
-
-        stage('Build Docker Image') {
-            steps {
-                sh 'docker build -t devops_ws .'
-            }
-        }
-
-        stage('Deploy Docker Container') {
-            steps {
-                sh 'docker stop devops_ws || true'
-                sh 'docker run -d -p 8090:8090 --name devops devops_ws'
-            }
-        }
+      }
     }
+
+    stage('Build Docker Image') {
+      steps {
+        sh 'docker build -t devops-webserver .'
+      }
+    }
+
+    stage('Deploy Docker Container') {
+      steps {
+        sh '''
+          docker stop devops-webserver || true
+          docker rm devops-webserver || true
+          docker run -d --name devops-webserver -p 3000:3000 devops-webserver
+        '''
+      }
+    }
+  }
 }
