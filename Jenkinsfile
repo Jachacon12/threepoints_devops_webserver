@@ -19,7 +19,7 @@ pipeline {
 
 stage('Análisis SonarQube') {
   steps {
-    withSonarQubeEnv('Sonar local') {
+    withSonarQubeEnv('devops-sonar') {
       sh '''
         docker run --rm \
           -v $PWD:/usr/src \
