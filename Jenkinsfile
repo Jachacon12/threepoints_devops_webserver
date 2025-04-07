@@ -7,7 +7,7 @@ pipeline {
 
     environment {
         SONAR_SCANNER_OPTS = "-Dsonar.projectKey=devops-sonar"
-        SONAR_AUTH_TOKEN = credentials('sonar_key')
+        SONAR_AUTH_TOKEN = credentials('new-sonar-key')
     }
 
     stages {
