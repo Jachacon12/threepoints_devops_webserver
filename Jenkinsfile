@@ -27,7 +27,7 @@ stage('Análisis SonarQube') {
           -e SONAR_HOST_URL=http://host.docker.internal:9000 \
           sonarsource/sonar-scanner-cli:5.0 \
           -Dsonar.projectKey=devops-sonar \
-          -Dsonar.sources=src \
+          -Dsonar.sources=. \
           -Dsonar.token=$SONAR_AUTH_TOKEN
       '''
     }
