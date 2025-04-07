@@ -28,7 +28,7 @@ stage('Análisis SonarQube') {
           sonarsource/sonar-scanner-cli:5.0 \
           -Dsonar.projectKey=devops-sonar \
           -Dsonar.sources=src \
-          -Dsonar.login=$SONAR_AUTH_TOKEN
+          -Dsonar.token=$SONAR_AUTH_TOKEN
       '''
     }
   }
