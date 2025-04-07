@@ -19,7 +19,7 @@ pipeline {
 
 stage('Análisis SonarQube') {
   steps {
-    withSonarQubeEnv('devops-sonar') {
+    withSonarQubeEnv('Sonar local') {
 sh """
   docker run --rm \
     --platform=linux/amd64 \
