@@ -20,18 +20,21 @@ pipeline {
 stage('Análisis SonarQube') {
   steps {
     withSonarQubeEnv('devops-sonar') {
-      sh '''
-        docker run --rm \
-            --platform=linux/amd64 \
-        -v $PWD:/usr/src \
-        -v $PWD/.scannerwork:/usr/src/.scannerwork \
-        -w /usr/src \
-        -e SONAR_HOST_URL=http://host.docker.internal:9000 \
-        sonarsource/sonar-scanner-cli:5.0 \
-        -Dsonar.projectKey=devops-sonar \
-        -Dsonar.sources=. \
-        -Dsonar.token=$SONAR_TOKEN
-    '''
+sh """
+  docker run --rm \
+    --platform=linux/amd64 \
+    -v ${WORKSPACE}:/usr/src \
+    -v ${WORKSPACE}/.scannerwork:/usr/src/.scannerwork \
+    -w /usr/src \
+    -e SONAR_TOKEN=$SONAR_TOKEN \
+    -e SONAR_HOST_URL=http://host.docker.internal:9000 \
+    sonarsource/sonar-scanner-cli:5.0 \
+    -Dsonar.projectKey=devops-sonar \
+    -Dsonar.sources=. \
+    -Dsonar.host.url=http://host.docker.internal:9000 \
+    -Dsonar.token=$SONAR_TOKEN
+"""
+
     }
   }
 }
