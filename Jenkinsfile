@@ -12,13 +12,21 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('Sonar local') {
-                    sh "/opt/sonar-scanner/bin/sonar-scanner -Dsonar.projectKey=devops-sonar -Dsonar.sources=. -Dsonar.token=${SONAR_TOKEN}"
-                }
-            }
-        }
+stage('SonarQube Analysis') {
+  steps {
+    withSonarQubeEnv('Sonar local') {
+      withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+        sh '''
+          sonar-scanner \
+            -Dsonar.projectKey=devops-sonar \
+            -Dsonar.sources=. \
+            -Dsonar.token=$SONAR_TOKEN
+        '''
+      }
+    }
+  }
+}
+
 
         stage('Wait for Quality Gate') {
             steps {
