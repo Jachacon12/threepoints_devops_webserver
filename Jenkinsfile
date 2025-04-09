@@ -42,6 +42,19 @@ pipeline {
                 }
             }
         }
+        stage('Configurar archivo') {
+            steps {
+              withCredentials([usernamePassword(credentialsId: 'Credentials_Threepoints', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                sh '''
+                  echo "[credentials]" > credentials.ini
+                  echo "user=${USER}" >> credentials.ini
+                  echo "password=${PASS}" >> credentials.ini
+                '''
+              }
+              archiveArtifacts artifacts: 'credentials.ini', fingerprint: true
+            }
+}
+
         stage('Build Docker Image') {
             steps {
                 sh 'docker build -t myapp:latest .'
