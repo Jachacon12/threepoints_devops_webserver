@@ -35,69 +35,55 @@ pipeline {
                 stage('Pruebas de SAST') {
                     steps {
                         script {
-                            staticAnalysis(false)
+                            staticAnalysis(params.ABORT_ON_QUALITY_GATE)
                         }
                     }
                 }
 
                 stage('Imprimir ENV') {
                     steps {
-                        sh 'echo "El worspace es: $WORKSPACE"'
+                        sh 'echo "El workspace es: $WORKSPACE"'
                     }
-                }
-            }
-        }
-
-        stage('Esperar Calidad') {
-            steps {
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: params.ABORT_ON_QUALITY_GATE
                 }
             }
         }
 
         stage('Configurar archivo') {
             steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'Credentials_Threepoints',
-                        usernameVariable: 'USER',
-                        passwordVariable: 'PASS'
-                    )
-                ]) {
+                withCredentials([usernamePassword(credentialsId: 'Credentials_Threepoints', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
                     sh '''
-                        echo "[credentials]" > credentials.ini
-                        echo "user=${USER}" >> credentials.ini
-                        echo "password=${PASS}" >> credentials.ini
+                      echo "[credentials]" > credentials.ini
+                      echo "user=${USER}" >> credentials.ini
+                      echo "password=${PASS}" >> credentials.ini
                     '''
                 }
                 archiveArtifacts artifacts: 'credentials.ini', fingerprint: true
             }
         }
 
-        stage('Deploy Docker Container') {
+        stage('Build Docker Image') {
             steps {
                 script {
-                    def containerName = 'myapp'
                     def imageName = 'myapp:latest'
-
-                    // Stop and remove if running
-                    def isRunning = sh(
-                        script: "docker ps --filter 'name=${containerName}' --format '{{.Names}}'",
+                    def containerName = 'myapp'
+                    def existing = sh(
+                        script: "docker ps -a --format '{{.Image}} {{.Names}}' | grep '${imageName} ${containerName}' || true",
                         returnStdout: true
                     ).trim()
 
-                    if (isRunning) {
-                        echo "Stopping existing container '${containerName}'..."
-                        sh "docker stop ${containerName}"
+                    if (existing) {
+                        echo "Container with name '${containerName}' based on image '${imageName}' already exists. Skipping build."
                     } else {
-                        echo "No running container named '${containerName}' found."
+                        sh "docker build -t ${imageName} ."
+                        echo "Image '${imageName}' built successfully."
                     }
-
-                    // Start fresh
-                    echo "Starting container '${containerName}' from image '${imageName}'..."
-                    sh "docker run -d --rm -p 3000:3000 --name ${containerName} ${imageName}"
                 }
+            }
+        }
+
+        stage('Deploy Docker Container') {
+            steps {
+                sh 'docker run -d --rm -p 3000:3000 --name myapp myapp:latest'
             }
         }
     }
