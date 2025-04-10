@@ -67,9 +67,21 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t myapp:latest .'
+                script {
+                    def imageName = 'myapp:latest'
+                    def containerName = 'myapp'
+                    def existing = sh(script: "docker ps -a --format '{{.Image}} {{.Names}}' | grep '${imageName} ${containerName}' || true", returnStdout: true).trim()
+        
+                    if (existing) {
+                        echo "Container with name '${containerName}' based on image '${imageName}' already exists. Skipping build."
+                    } else {
+                        sh "docker build -t ${imageName} ."
+                        echo "Image '${imageName}' built successfully."
+                    }
+                }
             }
-        }
+}
+
         stage('Deploy Docker Container') {
             steps {
                 sh 'docker run -d --rm -p 3000:3000 --name myapp myapp:latest'
