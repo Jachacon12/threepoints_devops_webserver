@@ -21,23 +21,25 @@ pipeline {
                 git 'https://github.com/Jachacon12/threepoints_devops_webserver.git'
             }
         }
+
         stage('Probar librería compartida') {
-          steps {
-            script {
-              holamundo()
-            }
-          }
-        }
-        stage('Análisis de Calidad') {
-            parallel {
-        stage('Pruebas de SAST') {
             steps {
                 script {
-                    staticAnalysis(false)
+                    holamundo()
                 }
             }
         }
-        
+
+        stage('Análisis de Calidad') {
+            parallel {
+                stage('Pruebas de SAST') {
+                    steps {
+                        script {
+                            staticAnalysis(false)
+                        }
+                    }
+                }
+
                 stage('Imprimir ENV') {
                     steps {
                         sh 'echo "El worspace es: $WORKSPACE"'
@@ -45,6 +47,7 @@ pipeline {
                 }
             }
         }
+
         stage('Esperar Calidad') {
             steps {
                 timeout(time: 5, unit: 'MINUTES') {
@@ -52,39 +55,49 @@ pipeline {
                 }
             }
         }
+
         stage('Configurar archivo') {
             steps {
-              withCredentials([usernamePassword(credentialsId: 'Credentials_Threepoints', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                sh '''
-                  echo "[credentials]" > credentials.ini
-                  echo "user=${USER}" >> credentials.ini
-                  echo "password=${PASS}" >> credentials.ini
-                '''
-              }
-              archiveArtifacts artifacts: 'credentials.ini', fingerprint: true
-            }
-}
-
-        stage('Build Docker Image') {
-            steps {
-                script {
-                    def imageName = 'myapp:latest'
-                    def containerName = 'myapp'
-                    def existing = sh(script: "docker ps -a --format '{{.Image}} {{.Names}}' | grep '${imageName} ${containerName}' || true", returnStdout: true).trim()
-        
-                    if (existing) {
-                        echo "Container with name '${containerName}' based on image '${imageName}' already exists. Skipping build."
-                    } else {
-                        sh "docker build -t ${imageName} ."
-                        echo "Image '${imageName}' built successfully."
-                    }
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'Credentials_Threepoints',
+                        usernameVariable: 'USER',
+                        passwordVariable: 'PASS'
+                    )
+                ]) {
+                    sh '''
+                        echo "[credentials]" > credentials.ini
+                        echo "user=${USER}" >> credentials.ini
+                        echo "password=${PASS}" >> credentials.ini
+                    '''
                 }
+                archiveArtifacts artifacts: 'credentials.ini', fingerprint: true
             }
-}
+        }
 
         stage('Deploy Docker Container') {
             steps {
-                sh 'docker run -d --rm -p 3000:3000 --name myapp myapp:latest'
+                script {
+                    def containerName = 'myapp'
+                    def imageName = 'myapp:latest'
+
+                    // Stop and remove if running
+                    def isRunning = sh(
+                        script: "docker ps --filter 'name=${containerName}' --format '{{.Names}}'",
+                        returnStdout: true
+                    ).trim()
+
+                    if (isRunning) {
+                        echo "Stopping existing container '${containerName}'..."
+                        sh "docker stop ${containerName}"
+                    } else {
+                        echo "No running container named '${containerName}' found."
+                    }
+
+                    // Start fresh
+                    echo "Starting container '${containerName}' from image '${imageName}'..."
+                    sh "docker run -d --rm -p 3000:3000 --name ${containerName} ${imageName}"
+                }
             }
         }
     }
