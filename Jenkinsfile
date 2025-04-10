@@ -1,3 +1,5 @@
+@Library('threepoints-shared-lib@main') _
+
 pipeline {
     agent any
 
@@ -10,6 +12,13 @@ pipeline {
             steps {
                 git 'https://github.com/Jachacon12/threepoints_devops_webserver.git'
             }
+        }
+        stage('Probar librería compartida') {
+          steps {
+            script {
+              holamundo()
+            }
+          }
         }
         stage('Análisis de Calidad') {
             parallel {
