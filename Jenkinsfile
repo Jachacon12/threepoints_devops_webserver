@@ -22,20 +22,13 @@ pipeline {
         }
         stage('Análisis de Calidad') {
             parallel {
-                stage('Pruebas de SAST') {
-                    steps {
-                    withSonarQubeEnv('Sonar local') {
-                        withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                        sh '''
-                            sonar-scanner \
-                             -Dsonar.projectKey=devops-sonar \
-                             -Dsonar.sources=. \
-                            -Dsonar.token=$SONAR_TOKEN
-                        '''
-                        }
-                    }
-                    }
+        stage('Pruebas de SAST') {
+            steps {
+                script {
+                    staticAnalysis()
                 }
+            }
+        }
         
                 stage('Imprimir ENV') {
                     steps {
