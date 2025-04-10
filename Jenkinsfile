@@ -33,7 +33,7 @@ pipeline {
         stage('Pruebas de SAST') {
             steps {
                 script {
-                    staticAnalysis()
+                    staticAnalysis(false)
                 }
             }
         }
