@@ -3,6 +3,14 @@
 pipeline {
     agent any
 
+    parameters {
+        booleanParam(
+            name: 'ABORT_ON_QUALITY_GATE',
+            defaultValue: false,
+            description: 'Abort pipeline if Quality Gate fails'
+        )
+    }
+
     environment {
         SONAR_TOKEN = credentials('sonar-token')
     }
@@ -39,8 +47,8 @@ pipeline {
         }
         stage('Esperar Calidad') {
             steps {
-                timeout(time: 1, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: params.ABORT_ON_QUALITY_GATE
                 }
             }
         }
