@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - master
+      - feature-*
+      - hotfix-*
 
 jobs:
   build:
@@ -11,7 +13,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Pruebas de SAST
         run: echo "Ejecución de pruebas de SAST"
