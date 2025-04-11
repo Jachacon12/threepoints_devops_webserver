@@ -2,40 +2,46 @@ name: Pull Request Quality Check
 
 on:
   pull_request:
+    branches:
+      - master
 
 jobs:
   pr-analysis:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Realizando análisis de SAST
+      - name: Realizar análisis de SAST
         run: echo "Realizando análisis de SAST"
 
-      - name: Comprobar existencia de allow_pull_request.txt
-        id: check_file
+      - name: Simular archivo de control (solo para pruebas locales)
+        run: |
+          echo "Archivo de control presente para simulación" > allow_pull_request.txt
+        if: always()
+
+      - name: Verificar si se permite el Pull Request
+        id: check
         run: |
           if [ -f allow_pull_request.txt ]; then
-            echo "allow_pull=true" >> "$GITHUB_OUTPUT"
+            echo "allow_pull=true" >> $GITHUB_OUTPUT
           else
-            echo "allow_pull=false" >> "$GITHUB_OUTPUT"
+            echo "allow_pull=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Permitir Pull Request
-        if: ${{ steps.check_file.outputs.allow_pull == 'true' }}
-        run: echo "Permitiendo Pull Request"
-
-      - name: Impedir Pull Request
-        if: ${{ steps.check_file.outputs.allow_pull == 'false' }}
-        run: |
-          echo "Build fallida. Impidiendo Pull Request"
-          exit 1
-
-      - name: Guardar archivo como artefacto
+      - name: Subir archivo como artefacto
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: allow-pull-request-check
+          name: allow_pull_request
           path: allow_pull_request.txt
+
+      - name: Permitir Pull Request
+        if: steps.check.outputs.allow_pull == 'true'
+        run: echo "✅ Permitiendo Pull Request"
+
+      - name: Impedir Pull Request
+        if: steps.check.outputs.allow_pull == 'false'
+        run: |
+          echo "❌ Build fallida. Impidiendo Pull Request"
+          exit 1
