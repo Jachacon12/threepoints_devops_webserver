@@ -1,0 +1,32 @@
+name: Continuous Integration Jorge Chacon
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Pruebas de SAST
+        run: echo "Ejecución de pruebas de SAST"
+
+      - name: Crear archivo de credenciales
+        run: |
+          echo "[credentials]" > credentials.ini
+          echo "user=${{ secrets.USERNAME }}" >> credentials.ini
+          echo "password=${{ secrets.PASSWORD }}" >> credentials.ini
+
+      - name: Guardar archivo como artefacto
+        uses: actions/upload-artifact@v3
+        with:
+          name: credentials
+          path: credentials.ini
+
+      - name: Build docker image
+        run: docker build -t devops_ws . --tag devops_ws_:$(date +%s)
