@@ -1,42 +1,70 @@
-name: Pull Request Quality Check
+name: PR Quality Check (via Jenkins)
 
 on:
   pull_request:
-    branches:
-      - master
 
 jobs:
-  pr-analysis:
+  sonar-pr-check:
     runs-on: ubuntu-latest
+    env:
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
+      JENKINS_URL: ${{ secrets.JENKINS_URL }}
+      JENKINS_USER: ${{ secrets.JENKINS_USER }}
+      JENKINS_TOKEN: ${{ secrets.JENKINS_TOKEN }}
+      JENKINS_JOB_NAME: ${{ secrets.JENKINS_JOB_NAME }}
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Realizar análisis de SAST
-        run: echo "Realizando análisis de SAST"
-
-      - name: Verificar si se permite el Pull Request
-        id: check
+      - name: Trigger Jenkins pipeline
         run: |
-          if [ -f allow_pull_request.txt ]; then
-            echo "allow_pull=true" >> $GITHUB_OUTPUT
+          echo "🚀 Triggering Jenkins job: $JENKINS_JOB_NAME"
+          curl -X POST "$JENKINS_URL/job/$JENKINS_JOB_NAME/build" \
+            --user "$JENKINS_USER:$JENKINS_TOKEN"
+
+      - name: Wait and get SonarQube Quality Gate
+        run: |
+          echo "⏳ Waiting for SonarQube to analyze..."
+
+          analysis_id=""
+          until [ ! -z "$analysis_id" ]; do
+            analysis_id=$(curl -s -u $SONAR_TOKEN: "$SONAR_HOST_URL/api/ce/component?component=$SONAR_PROJECT_KEY" | jq -r '.queue[0].id')
+            sleep 5
+          done
+
+          echo "🔎 Found Analysis ID: $analysis_id"
+
+          status="PENDING"
+          while [[ "$status" == "PENDING" || "$status" == "IN_PROGRESS" ]]; do
+            sleep 5
+            status=$(curl -s -u $SONAR_TOKEN: "$SONAR_HOST_URL/api/ce/task?id=$analysis_id" | jq -r '.task.status')
+            echo "Task Status: $status"
+          done
+
+          quality_status=$(curl -s -u $SONAR_TOKEN: "$SONAR_HOST_URL/api/qualitygates/project_status?analysisId=$analysis_id" | jq -r '.projectStatus.status')
+          echo "Quality Gate: $quality_status"
+
+          if [[ "$quality_status" == "OK" ]]; then
+            echo "✅ Quality Gate passed. Allowing PR."
+            echo "true" > allow_pull_request.txt
+            echo "allow_pull=true" >> $GITHUB_ENV
           else
-            echo "allow_pull=false" >> $GITHUB_OUTPUT
+            echo "❌ Quality Gate failed. Blocking PR."
+            echo "false" > allow_pull_request.txt
+            echo "allow_pull=false" >> $GITHUB_ENV
           fi
 
-      - name: Subir archivo como artefacto
-        if: always()
+      - name: Upload Quality Gate decision
         uses: actions/upload-artifact@v4
         with:
           name: allow_pull_request
           path: allow_pull_request.txt
 
-      - name: Permitir Pull Request
-        if: steps.check.outputs.allow_pull == 'true'
-        run: echo "✅ Permitiendo Pull Request"
-
-      - name: Impedir Pull Request
-        if: steps.check.outputs.allow_pull == 'false'
+      - name: Enforce PR policy
         run: |
-          echo "❌ Build fallida. Impidiendo Pull Request"
-          exit 1
+          if [[ "$allow_pull" != "true" ]]; then
+            echo "🚫 Pull Request blocked due to failed Quality Gate."
+            exit 1
+          else
+            echo "✅ Pull Request can proceed."
+          fi
