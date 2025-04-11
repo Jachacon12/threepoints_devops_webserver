@@ -23,7 +23,7 @@ jobs:
           echo "password=${{ secrets.PASSWORD }}" >> credentials.ini
 
       - name: Guardar archivo como artefacto
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3.1.3
         with:
           name: credentials
           path: credentials.ini
