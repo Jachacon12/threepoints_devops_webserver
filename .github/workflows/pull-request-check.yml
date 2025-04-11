@@ -15,11 +15,6 @@ jobs:
       - name: Realizar análisis de SAST
         run: echo "Realizando análisis de SAST"
 
-      - name: Simular archivo de control (solo para pruebas locales)
-        run: |
-          echo "Archivo de control presente para simulación" > allow_pull_request.txt
-        if: always()
-
       - name: Verificar si se permite el Pull Request
         id: check
         run: |
