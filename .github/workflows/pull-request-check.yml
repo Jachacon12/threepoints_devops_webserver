@@ -1,0 +1,41 @@
+name: Pull Request Quality Check
+
+on:
+  pull_request:
+
+jobs:
+  pr-analysis:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Realizando análisis de SAST
+        run: echo "Realizando análisis de SAST"
+
+      - name: Comprobar existencia de allow_pull_request.txt
+        id: check_file
+        run: |
+          if [ -f allow_pull_request.txt ]; then
+            echo "allow_pull=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "allow_pull=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Permitir Pull Request
+        if: ${{ steps.check_file.outputs.allow_pull == 'true' }}
+        run: echo "Permitiendo Pull Request"
+
+      - name: Impedir Pull Request
+        if: ${{ steps.check_file.outputs.allow_pull == 'false' }}
+        run: |
+          echo "Build fallida. Impidiendo Pull Request"
+          exit 1
+
+      - name: Guardar archivo como artefacto
+        if: ${{ steps.check_file.outputs.allow_pull == 'true' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: allow-pull-request-check
+          path: allow_pull_request.txt
